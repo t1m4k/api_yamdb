@@ -11,9 +11,9 @@ from rest_framework import viewsets
 from .serializers import ReviewSerializer, CommentSerializer
 from .serializers import SignUpSerializer, TokenSerializer
 from users.models import User
-
-
 from reviews.models import Review, Title, Comment
+
+
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
@@ -27,6 +27,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
         title_id = self.kwargs.get('title_id')
         title = get_object_or_404(Title, pk=title_id)
         return title.reviews.all()
+
+
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
