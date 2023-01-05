@@ -1,8 +1,10 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
+
 from reviews.models import Review, Comment
 from users.models import User
+from users.validators import username_me_denied
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -38,17 +40,6 @@ class SignUpSerializer(serializers.Serializer):
             raise ValidationError(
                 'Имя пользователя "me" не разрешено.'
             )
-        if User.objects.filter(username=value).exists():
-            raise ValidationError(
-                f'Пользователь с таким username: {value} - уже существует.'
-            )
-        return value
-
-    def validate_email(self, value):
-        if User.objects.filter(email=value).exists():
-            raise ValidationError(
-                f'Пользователь с таким email: {value} - уже существует.'
-            )
         return value
 
 
@@ -56,9 +47,27 @@ class TokenSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
     confirmation_code = serializers.CharField(required=True)
 
+
+class UserSerializer(serializers.ModelSerializer):
+    username = serializers.RegexField(max_length=settings.LIMIT_USERNAME,
+                                      regex=r'^[\w.@+-]+\Z', required=True)
+
+    class Meta:
+        abstract = True
+        model = User
+        fields = ('username', 'email', 'first_name',
+                  'last_name', 'bio', 'role')
+
     def validate_username(self, value):
-        if not User.objects.filter(username=value).exists():
+        if (
+            self.context.get('request').method == 'POST'
+            and User.objects.filter(username=value).exists()
+        ):
             raise ValidationError(
-                f'Пользователь с таким username: {value} - не существует.'
+                'Пользователь с таким именем уже существует.'
             )
-        return value
+        return username_me_denied(value)
+
+
+class UserWriteSerializer(UserSerializer):
+    role = serializers.CharField(read_only=True)

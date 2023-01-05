@@ -1,6 +1,9 @@
 from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
+from django.db import IntegrityError
 from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -8,10 +11,11 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 
-from .serializers import ReviewSerializer, CommentSerializer
-from .serializers import SignUpSerializer, TokenSerializer
 from users.models import User
 from reviews.models import Review, Title, Comment
+from .serializers import (ReviewSerializer, CommentSerializer,
+                          SignUpSerializer, TokenSerializer, UserSerializer,
+                          UserWriteSerializer)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -50,7 +54,13 @@ class SignUpApiView(APIView):
         serializer.is_valid(raise_exception=True)
         username = serializer.validated_data.get('username')
         email = serializer.validated_data.get('email')
-        user = User.objects.create(username=username, email=email)
+        try:
+            user = User.objects.get_or_create(
+                username=username, email=email
+            )[0]
+        except IntegrityError:
+            return Response('Этот username или email уже используется',
+                            status.HTTP_400_BAD_REQUEST)
         confirmation_code = default_token_generator.make_token(user)
         send_mail(
             'Код подтверждения',
@@ -75,3 +85,24 @@ class TokenApiView(APIView):
         token = RefreshToken.for_user(user)
         return Response({'token': str(token.access_token)},
                         status=status.HTTP_200_OK)
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    lookup_field = 'username'
+
+    @action(
+        methods=['patch', 'get'],
+        detail=False,
+        permission_classes=(IsAuthenticated,),
+    )
+    def me(self, request):
+        user = get_object_or_404(User, username=self.request.user)
+        serializer = UserWriteSerializer(user)
+        if request.method == 'PATCH':
+            serializer = UserWriteSerializer(
+                user, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
