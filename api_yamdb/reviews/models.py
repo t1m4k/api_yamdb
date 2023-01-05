@@ -1,14 +1,9 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from users.models import User
 
-
-class User(AbstractUser):
-    """Заглушка модели User"""
-    pass
 
 class Title(models.Model):
     """Заглушка модели Title"""
-    
     pass
 
 
