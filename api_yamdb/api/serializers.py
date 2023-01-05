@@ -7,10 +7,22 @@ from users.models import User
 from users.validators import username_me_denied
 
 
+class TitleSerializer(serializers.ModelSerializer):
+    rating = serializers.DecimalField(max_digits=2, decimal_places=1)
+
+
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
+    def create(self, validated_data):
+        if Review.objects.filter(
+            author=self.context['request'].user, 
+            title=self.validated_data.get('title')).exists:
+            raise serializers.ValidationError(
+                'Возможно оставить только один обзор'
+            )
+        return  Review.objects.create(**validated_data)
 
     class Meta:
         fields = '__all__'

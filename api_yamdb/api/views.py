@@ -1,6 +1,7 @@
 from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
 from django.db import IntegrityError
+from django.db.models import Avg
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -17,6 +18,14 @@ from .serializers import (ReviewSerializer, CommentSerializer,
                           SignUpSerializer, TokenSerializer, UserSerializer,
                           UserWriteSerializer)
 
+
+class TitleViewSet(viewsets.ModelViewSet):
+
+    def get_queryset(self):
+        if self.action in ['list', 'retrieve']:
+            return Title.objects.annotate(rating=Avg('reviews__score'))
+        return Title.objects.all()
+        
 
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
