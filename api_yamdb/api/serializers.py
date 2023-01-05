@@ -15,14 +15,15 @@ class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
+
     def create(self, validated_data):
         if Review.objects.filter(
-            author=self.context['request'].user, 
-            title=self.validated_data.get('title')).exists:
+                author=self.context['request'].user,
+                title=self.validated_data.get('title')).exists:
             raise serializers.ValidationError(
                 'Возможно оставить только один обзор'
             )
-        return  Review.objects.create(**validated_data)
+        return Review.objects.create(**validated_data)
 
     class Meta:
         fields = '__all__'
@@ -72,8 +73,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     def validate_username(self, value):
         if (
-            self.context.get('request').method == 'POST'
-            and User.objects.filter(username=value).exists()
+                self.context.get('request').method == 'POST'
+                and User.objects.filter(username=value).exists()
         ):
             raise ValidationError(
                 'Пользователь с таким именем уже существует.'
