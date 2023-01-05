@@ -1,5 +1,6 @@
 from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
+from django.db.models import Avg
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -13,6 +14,14 @@ from .serializers import SignUpSerializer, TokenSerializer
 from users.models import User
 from reviews.models import Review, Title, Comment
 
+
+class TitleViewSet(viewsets.ModelViewSet):
+
+    def get_queryset(self):
+        if self.action in ['list', 'retrieve']:
+            return Title.objects.annotate(rating=Avg('reviews__score'))
+        return Title.objects.all()
+        
 
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
