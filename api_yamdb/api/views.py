@@ -13,6 +13,7 @@ class TitleViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             return Title.objects.annotate(rating=Avg('reviews__score'))
         return Title.objects.all()
+        
 
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
