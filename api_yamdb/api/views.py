@@ -2,7 +2,7 @@ from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
 from django.db import IntegrityError
 from django.db.models import Avg
-from rest_framework import status
+from rest_framework import status, filters
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
@@ -14,20 +14,24 @@ from rest_framework import viewsets
 
 from users.models import User
 from reviews.models import Review, Title, Comment
+from .permissions import (IsAdmin, IsAdminOrReadOnly,
+                          IsAuthorOrModeRatOrOrAdminOrReadOnly)
 from .serializers import (ReviewSerializer, CommentSerializer,
                           SignUpSerializer, TokenSerializer, UserSerializer,
                           UserWriteSerializer)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
+    permission_classes = (IsAdminOrReadOnly,)
 
     def get_queryset(self):
         if self.action in ['list', 'retrieve']:
             return Title.objects.annotate(rating=Avg('reviews__score'))
         return Title.objects.all()
-        
+
 
 class ReviewViewSet(viewsets.ModelViewSet):
+    permission_classes = (IsAuthorOrModeRatOrOrAdminOrReadOnly,)
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
 
@@ -45,6 +49,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+    permission_classes = (IsAuthorOrModeRatOrOrAdminOrReadOnly,)
 
     def perform_create(self, serializer):
         review_id = self.kwargs.get('review_id')
@@ -99,7 +104,10 @@ class TokenApiView(APIView):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = (IsAdmin,)
+    filter_backends = (filters.SearchFilter,)
     lookup_field = 'username'
+    search_fields = ('=username',)
 
     @action(
         methods=['patch', 'get'],
