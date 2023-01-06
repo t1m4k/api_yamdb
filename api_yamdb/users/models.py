@@ -25,7 +25,13 @@ class User(AbstractUser):
             'unique': "Пользователь с таким username уже существует",
         },
     )
-    email = models.EmailField(unique=True, max_length=settings.LIMIT_EMAIL)
+    email = models.EmailField(
+        max_length=settings.LIMIT_EMAIL,
+        unique=True,
+        error_messages={
+            'unique': "Пользователь с таким email уже существует",
+        },
+    )
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default=USER)
     first_name = models.CharField(max_length=settings.LIMIT_USERNAME,
                                   blank=True)
@@ -42,6 +48,9 @@ class User(AbstractUser):
     @property
     def is_admin(self):
         return self.role == self.ADMIN or self.is_superuser or self.is_staff
+
+    class Meta:
+        ordering = ('id',)
 
     def __str__(self):
         return self.username

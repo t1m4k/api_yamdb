@@ -1,7 +1,6 @@
 from django.conf import settings
-from django.core.exceptions import ValidationError
 from rest_framework import serializers
-
+from rest_framework.validators import UniqueValidator
 from reviews.models import Review, Comment
 from users.models import User
 from users.validators import username_me_denied
@@ -43,17 +42,15 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class SignUpSerializer(serializers.Serializer):
-    username = serializers.RegexField(max_length=settings.LIMIT_USERNAME,
-                                      regex=r'^[\w.@+-]+\Z', required=True)
+    username = serializers.RegexField(
+        max_length=settings.LIMIT_USERNAME,
+        regex=r'^[\w.@+-]+\Z',
+        required=True)
     email = serializers.EmailField(max_length=settings.LIMIT_EMAIL,
                                    required=True)
 
     def validate_username(self, value):
-        if value == 'me':
-            raise ValidationError(
-                'Имя пользователя "me" не разрешено.'
-            )
-        return value
+        return username_me_denied(value)
 
 
 class TokenSerializer(serializers.Serializer):
@@ -62,25 +59,30 @@ class TokenSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    username = serializers.RegexField(max_length=settings.LIMIT_USERNAME,
-                                      regex=r'^[\w.@+-]+\Z', required=True)
+    username = serializers.RegexField(
+        max_length=settings.LIMIT_USERNAME,
+        regex=r'^[\w.@+-]+\Z',
+        validators=[UniqueValidator(
+            queryset=User.objects.all(),
+            message='Пользователь с таким username уже существует'
+        )],
+        required=True
+    )
 
     class Meta:
-        abstract = True
         model = User
         fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
+        read_only_fields = ('role',)
 
     def validate_username(self, value):
-        if (
-                self.context.get('request').method == 'POST'
-                and User.objects.filter(username=value).exists()
-        ):
-            raise ValidationError(
-                'Пользователь с таким именем уже существует.'
-            )
         return username_me_denied(value)
 
+    def validate_role(self, value):
+        if value not in ['admin', 'user', 'moderator']:
+            raise serializers.ValidationError(f"Несуществующая роль: {value}")
+        return value
 
-class UserWriteSerializer(UserSerializer):
-    role = serializers.CharField(read_only=True)
+
+class AdminUserSerializer(UserSerializer):
+    role = serializers.CharField(read_only=False, required=False)

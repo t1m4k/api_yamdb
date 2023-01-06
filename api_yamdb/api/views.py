@@ -18,7 +18,7 @@ from .permissions import (IsAdmin, IsAdminOrReadOnly,
                           IsAuthorOrModeRatOrOrAdminOrReadOnly)
 from .serializers import (ReviewSerializer, CommentSerializer,
                           SignUpSerializer, TokenSerializer, UserSerializer,
-                          UserWriteSerializer)
+                          AdminUserSerializer)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -103,7 +103,8 @@ class TokenApiView(APIView):
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    serializer_class = AdminUserSerializer
+    http_method_names = ['get', 'post', 'patch', 'delete']
     permission_classes = (IsAdmin,)
     filter_backends = (filters.SearchFilter,)
     lookup_field = 'username'
@@ -116,10 +117,14 @@ class UserViewSet(viewsets.ModelViewSet):
     )
     def me(self, request):
         user = get_object_or_404(User, username=self.request.user)
-        serializer = UserWriteSerializer(user)
+        serializer = UserSerializer(user)
         if request.method == 'PATCH':
-            serializer = UserWriteSerializer(
-                user, data=request.data, partial=True)
+            if user.is_admin:
+                serializer = AdminUserSerializer(user, data=request.data,
+                                                 partial=True)
+            else:
+                serializer = UserSerializer(user, data=request.data,
+                                            partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
