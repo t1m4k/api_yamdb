@@ -2,7 +2,7 @@ from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
 from django.db import IntegrityError
 from django.db.models import Avg
-from rest_framework import status, filters
+from rest_framework import status, filters, permissions
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
@@ -12,22 +12,16 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 
+
 from users.models import User
-from reviews.models import Review, Title, Comment
+from reviews.models import Review, Title, Comment, Genre, Category
 from .permissions import (IsAdmin, IsAdminOrReadOnly,
                           IsAuthorOrModeRatOrOrAdminOrReadOnly)
 from .serializers import (ReviewSerializer, CommentSerializer,
                           SignUpSerializer, TokenSerializer, UserSerializer,
-                          AdminUserSerializer)
-
-
-class TitleViewSet(viewsets.ModelViewSet):
-    permission_classes = (IsAdminOrReadOnly,)
-
-    def get_queryset(self):
-        if self.action in ['list', 'retrieve']:
-            return Title.objects.annotate(rating=Avg('reviews__score'))
-        return Title.objects.all()
+                          AdminUserSerializer, GenreSerializer,
+                          CategorySerializer, TitleSerializer,
+                          TitlePostSerializer)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -128,3 +122,44 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class GenreViewSet(viewsets.ModelViewSet):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+
+    def get_permissions(self):
+        pass
+
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+
+    def get_permissions(self):
+        pass
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+
+    def get_serializer_class(self):
+        if self.request.method in ['POST', 'PATCH', 'DELETE']:
+            return TitlePostSerializer
+        return TitleSerializer
+
+    def get_permissions(self):
+        pass
+
+    def get_queryset(self):
+        if self.action in ['list', 'retrieve']:
+            return Title.objects.annotate(rating=Avg('reviews__score'))
+        return Title.objects.all()
