@@ -1,7 +1,10 @@
 from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
+from django.db import IntegrityError
 from django.db.models import Avg
-from rest_framework import status
+from rest_framework import status, filters
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -9,21 +12,26 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 
-from .serializers import ReviewSerializer, CommentSerializer
-from .serializers import SignUpSerializer, TokenSerializer
 from users.models import User
 from reviews.models import Review, Title, Comment
+from .permissions import (IsAdmin, IsAdminOrReadOnly,
+                          IsAuthorOrModeRatOrOrAdminOrReadOnly)
+from .serializers import (ReviewSerializer, CommentSerializer,
+                          SignUpSerializer, TokenSerializer, UserSerializer,
+                          AdminUserSerializer)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
+    permission_classes = (IsAdminOrReadOnly,)
 
     def get_queryset(self):
         if self.action in ['list', 'retrieve']:
             return Title.objects.annotate(rating=Avg('reviews__score'))
         return Title.objects.all()
-        
+
 
 class ReviewViewSet(viewsets.ModelViewSet):
+    permission_classes = (IsAuthorOrModeRatOrOrAdminOrReadOnly,)
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
 
@@ -41,6 +49,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+    permission_classes = (IsAuthorOrModeRatOrOrAdminOrReadOnly,)
 
     def perform_create(self, serializer):
         review_id = self.kwargs.get('review_id')
@@ -59,7 +68,13 @@ class SignUpApiView(APIView):
         serializer.is_valid(raise_exception=True)
         username = serializer.validated_data.get('username')
         email = serializer.validated_data.get('email')
-        user = User.objects.create(username=username, email=email)
+        try:
+            user = User.objects.get_or_create(
+                username=username, email=email
+            )[0]
+        except IntegrityError:
+            return Response('Этот username или email уже используется',
+                            status.HTTP_400_BAD_REQUEST)
         confirmation_code = default_token_generator.make_token(user)
         send_mail(
             'Код подтверждения',
@@ -84,3 +99,32 @@ class TokenApiView(APIView):
         token = RefreshToken.for_user(user)
         return Response({'token': str(token.access_token)},
                         status=status.HTTP_200_OK)
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = AdminUserSerializer
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    permission_classes = (IsAdmin,)
+    filter_backends = (filters.SearchFilter,)
+    lookup_field = 'username'
+    search_fields = ('=username',)
+
+    @action(
+        methods=['patch', 'get'],
+        detail=False,
+        permission_classes=(IsAuthenticated,),
+    )
+    def me(self, request):
+        user = get_object_or_404(User, username=self.request.user)
+        serializer = UserSerializer(user)
+        if request.method == 'PATCH':
+            if user.is_admin:
+                serializer = AdminUserSerializer(user, data=request.data,
+                                                 partial=True)
+            else:
+                serializer = UserSerializer(user, data=request.data,
+                                            partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
