@@ -1,13 +1,11 @@
+import datetime
 from django.conf import settings
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-from reviews.models import Review, Comment
+
 from users.models import User
 from users.validators import username_me_denied
-
-
-class TitleSerializer(serializers.ModelSerializer):
-    rating = serializers.DecimalField(max_digits=2, decimal_places=1)
+from reviews.models import Review, Comment, Genre, Category, Title
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -32,13 +30,58 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
-        read_only=True, slug_field='username'
-    )
+        read_only=True, slug_field='username')
 
     class Meta:
         fields = '__all__'
         read_only_fields = ('title',)
         model = Comment
+
+
+class GenreSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Genre
+        fields = '__all__'
+
+
+class CategorySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Category
+        fields = '__all__'
+
+
+class TitleSerializer(serializers.ModelSerializer):
+    genre = GenreSerializer(many=True,)
+    category = CategorySerializer()
+    rating = serializers.DecimalField(max_digits=2, decimal_places=1)
+
+    class Meta:
+        fields = ('__all__')
+        model = Title
+
+
+class TitlePostSerializer(serializers.ModelSerializer):
+    category = serializers.SlugRelatedField(
+        slug_field='username',
+        queryset=Category.objects.all(),
+    )
+    genre = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Genre.objects.all(),
+        many=True
+    )
+
+    class Meta:
+        fields = '__all__'
+        model = Title
+
+    def validate_year(self, value):
+        year = datetime.today().year
+        if year < value:
+            raise serializers.ValidationError('Неверный год выпуска')
+        return value
 
 
 class SignUpSerializer(serializers.Serializer):
@@ -86,3 +129,4 @@ class UserSerializer(serializers.ModelSerializer):
 
 class AdminUserSerializer(UserSerializer):
     role = serializers.CharField(read_only=False, required=False)
+
