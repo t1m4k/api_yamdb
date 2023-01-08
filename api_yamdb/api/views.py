@@ -4,6 +4,7 @@ from django.db import IntegrityError
 from django.db.models import Avg
 from rest_framework import status, filters, mixins
 from rest_framework.decorators import action
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -13,6 +14,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 
 from users.models import User
+from .filters import GenreFilter
 from reviews.models import Review, Title, Comment, Genre, Category
 from .permissions import (IsAdmin, IsAdminOrReadOnly,
                           IsAuthorOrModeRatOrOrAdminOrReadOnly)
@@ -145,6 +147,9 @@ class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (DjangoFilterBackend, )
+    filterset_class = GenreFilter
+    search_fields = ('category', 'genre', 'name', 'year')
 
     def get_serializer_class(self):
         if self.request.method in ['POST', 'PATCH', 'DELETE']:
