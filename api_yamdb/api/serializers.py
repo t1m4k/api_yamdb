@@ -16,7 +16,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         if Review.objects.filter(
                 author=self.context['request'].user,
-                title=self.validated_data.get('title')).exists:
+                title=validated_data.get('title')).exists():
             raise serializers.ValidationError(
                 'Возможно оставить только один обзор'
             )
@@ -31,6 +31,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username')
+    review = serializers.SlugRelatedField(read_only=True, slug_field='text')
 
     class Meta:
         fields = '__all__'
@@ -53,7 +54,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class TitleSerializer(serializers.ModelSerializer):
     genre = GenreSerializer(many=True)
     category = CategorySerializer()
-    rating = serializers.DecimalField(max_digits=2, decimal_places=1, required=False)
+    rating = serializers.IntegerField(required=False)
 
     class Meta:
         fields = '__all__'
