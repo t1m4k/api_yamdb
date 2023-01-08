@@ -39,26 +39,24 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class GenreSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Genre
         fields = ('name', 'slug')
 
 
 class CategorySerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Category
         fields = ('name', 'slug')
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    genre = GenreSerializer(many=True,)
+    genre = GenreSerializer(many=True)
     category = CategorySerializer()
-    rating = serializers.DecimalField(max_digits=2, decimal_places=1)
+    rating = serializers.DecimalField(max_digits=2, decimal_places=1, required=False)
 
     class Meta:
-        fields = ('__all__')
+        fields = '__all__'
         model = Title
 
 
@@ -82,6 +80,9 @@ class TitlePostSerializer(serializers.ModelSerializer):
         if year < value:
             raise serializers.ValidationError('Неверный год выпуска')
         return value
+
+    def to_representation(self, instance):
+        return TitleSerializer(instance).data
 
 
 class SignUpSerializer(serializers.Serializer):
@@ -129,4 +130,3 @@ class UserSerializer(serializers.ModelSerializer):
 
 class AdminUserSerializer(UserSerializer):
     role = serializers.CharField(read_only=False, required=False)
-
