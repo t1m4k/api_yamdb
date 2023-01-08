@@ -4,7 +4,7 @@ from django.db import IntegrityError
 from django.db.models import Avg
 from rest_framework import status, filters, mixins
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -64,6 +64,8 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 
 class SignUpApiView(APIView):
+    permission_classes = (AllowAny,)
+
     def post(self, request):
         serializer = SignUpSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -87,6 +89,8 @@ class SignUpApiView(APIView):
 
 
 class TokenApiView(APIView):
+    permission_classes = (AllowAny,)
+
     def post(self, request):
         serializer = TokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
