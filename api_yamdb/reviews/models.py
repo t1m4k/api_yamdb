@@ -21,12 +21,11 @@ class Category(models.Model):
 class Title(models.Model):
     name = models.CharField(max_length=256)
     year = models.IntegerField()
-    description = models.TextField()
-    genre = models.ForeignKey(
-        Genre, on_delete=models.CASCADE, related_name='genre'
-    )
+    description = models.TextField(blank=True)
+    genre = models.ManyToManyField(
+        Genre)
     category = models.ForeignKey(
-        Category, on_delete=models.CASCADE, related_name='category'
+        Category, on_delete=models.SET_NULL, related_name='category', null=True
     )
 
 

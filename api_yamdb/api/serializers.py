@@ -64,7 +64,7 @@ class TitleSerializer(serializers.ModelSerializer):
 
 class TitlePostSerializer(serializers.ModelSerializer):
     category = serializers.SlugRelatedField(
-        slug_field='username',
+        slug_field='slug',
         queryset=Category.objects.all(),
     )
     genre = serializers.SlugRelatedField(
@@ -78,7 +78,7 @@ class TitlePostSerializer(serializers.ModelSerializer):
         model = Title
 
     def validate_year(self, value):
-        year = datetime.today().year
+        year = datetime.date.today().year
         if year < value:
             raise serializers.ValidationError('Неверный год выпуска')
         return value

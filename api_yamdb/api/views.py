@@ -151,9 +151,6 @@ class TitleViewSet(viewsets.ModelViewSet):
             return TitlePostSerializer
         return TitleSerializer
 
-    def get_permissions(self):
-        pass
-
     def get_queryset(self):
         if self.action in ['list', 'retrieve']:
             return Title.objects.annotate(rating=Avg('reviews__score'))
