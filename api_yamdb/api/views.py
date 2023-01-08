@@ -136,7 +136,7 @@ class GenreViewSet(CustomViewSet):
     serializer_class = GenreSerializer
 
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(CustomViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
