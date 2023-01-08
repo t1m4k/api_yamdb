@@ -3,6 +3,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.db import IntegrityError
 from django.db.models import Avg
 from rest_framework import status, filters, mixins
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
@@ -13,8 +14,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 
 from users.models import User
+from .filters import GenreFilter
 from reviews.models import Review, Title, Comment, Genre, Category
-from .filters import TitleFilter
 from .permissions import (IsAdmin, IsAdminOrReadOnly,
                           IsAuthorOrModeRatOrOrAdminOrReadOnly)
 from .serializers import (ReviewSerializer, CommentSerializer,
@@ -147,12 +148,12 @@ class CategoryViewSet(CustomViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    # queryset = Title.objects.all()
+    queryset = Title.objects.all()
     serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
-    filterset_class = TitleFilter
-    filterset_fields = ('name',)
-    ordering = ('name',)
+    filter_backends = (DjangoFilterBackend, )
+    filterset_class = GenreFilter
+    search_fields = ('category', 'genre', 'name', 'year')
 
     def get_serializer_class(self):
         if self.request.method in ['POST', 'PATCH', 'DELETE']:
