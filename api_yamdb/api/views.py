@@ -14,6 +14,7 @@ from rest_framework import viewsets
 
 from users.models import User
 from reviews.models import Review, Title, Comment, Genre, Category
+from .filters import TitleFilter
 from .permissions import (IsAdmin, IsAdminOrReadOnly,
                           IsAuthorOrModeRatOrOrAdminOrReadOnly)
 from .serializers import (ReviewSerializer, CommentSerializer,
@@ -149,6 +150,9 @@ class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
+    filterset_class = TitleFilter
+    filterset_fields = ('name',)
+    ordering = ('name',)
 
     def get_serializer_class(self):
         if self.request.method in ['POST', 'PATCH', 'DELETE']:
