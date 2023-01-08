@@ -9,6 +9,9 @@ class Genre(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        ordering = ('id',)
+
 
 class Category(models.Model):
     name = models.CharField(max_length=256)
@@ -16,6 +19,9 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        ordering = ('id',)
 
 
 class Title(models.Model):
@@ -27,6 +33,9 @@ class Title(models.Model):
     category = models.ForeignKey(
         Category, on_delete=models.SET_NULL, related_name='category', null=True
     )
+
+    class Meta:
+        ordering = ('id',)
 
 
 class Review(models.Model):
@@ -43,6 +52,7 @@ class Review(models.Model):
         return self.text[:15]
 
     class Meta:
+        ordering = ('-pub_date',)
         constraints = [models.UniqueConstraint(
             fields=['author', 'title'],
             name='only_one_review_for_each_title')
@@ -60,3 +70,6 @@ class Comment(models.Model):
 
     def __str__(self):
         return self.text[:15]
+
+    class Meta:
+        ordering = ('-pub_date',)
