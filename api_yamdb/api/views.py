@@ -74,9 +74,9 @@ class SignUpApiView(APIView):
         username = serializer.validated_data.get('username')
         email = serializer.validated_data.get('email')
         try:
-            user = User.objects.get_or_create(
+            user, _ = User.objects.get_or_create(
                 username=username, email=email
-            )[0]
+            )
         except IntegrityError:
             return Response('Этот username или email уже используется',
                             status.HTTP_400_BAD_REQUEST)
