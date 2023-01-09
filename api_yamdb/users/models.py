@@ -32,7 +32,11 @@ class User(AbstractUser):
             'unique': "Пользователь с таким email уже существует",
         },
     )
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default=USER)
+    role = models.CharField(
+        max_length=max(len(role) for role, _ in ROLE_CHOICES),
+        choices=ROLE_CHOICES,
+        default=USER
+    )
     first_name = models.CharField(max_length=settings.LIMIT_USERNAME,
                                   blank=True)
     bio = models.TextField(blank=True)
