@@ -1,28 +1,26 @@
-from django.core.mail import send_mail
+from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.db.models import Avg
-from rest_framework import status, filters, mixins
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.conf import settings
-from django.shortcuts import get_object_or_404
-from rest_framework import viewsets
-
+from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
+
 from .filters import GenreFilter
-from reviews.models import Review, Title, Comment, Genre, Category
 from .permissions import (IsAdmin, IsAdminOrReadOnly,
                           IsAuthorOrModeRatOrOrAdminOrReadOnly)
-from .serializers import (ReviewSerializer, CommentSerializer,
-                          SignUpSerializer, TokenSerializer, UserSerializer,
-                          AdminUserSerializer, GenreSerializer,
-                          CategorySerializer, TitleSerializer,
-                          TitlePostSerializer)
+from .serializers import (AdminUserSerializer, CategorySerializer,
+                          CommentSerializer, GenreSerializer, ReviewSerializer,
+                          SignUpSerializer, TitlePostSerializer,
+                          TitleSerializer, TokenSerializer, UserSerializer)
 
 
 class CustomViewSet(mixins.CreateModelMixin, mixins.ListModelMixin,

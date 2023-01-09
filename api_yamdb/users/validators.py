@@ -1,4 +1,3 @@
-from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core import exceptions
 
 
