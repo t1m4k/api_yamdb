@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MaxValueValidator, MinValueValidator
 from users.models import User
 
 
@@ -40,11 +41,16 @@ class Title(models.Model):
 
 class Review(models.Model):
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='reviews')
+        User, on_delete=models.CASCADE, related_name='reviews', verbose_name='Автор отзыва')
     title = models.ForeignKey(
-        Title, on_delete=models.CASCADE, related_name='reviews')
-    text = models.TextField()
-    score = models.IntegerField(choices=list(zip(range(1, 11), range(1, 11))))
+        Title, on_delete=models.CASCADE, related_name='reviews', verbose_name='Произведение')
+    text = models.TextField(verbose_name='Текст отзыва')
+    score = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(10)],
+        verbose_name='Оценка произведения')
     pub_date = models.DateTimeField(
         'Дата добавления', auto_now_add=True, db_index=True)
 
@@ -61,10 +67,10 @@ class Review(models.Model):
 
 class Comment(models.Model):
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='comments')
-    text = models.TextField()
+        User, on_delete=models.CASCADE, related_name='comments', verbose_name='Автор комментария')
+    text = models.TextField(verbose_name='Текст комментария')
     review = models.ForeignKey(
-        Review, on_delete=models.CASCADE, related_name='comments')
+        Review, on_delete=models.CASCADE, related_name='comments', verbose_name='Ревью')
     pub_date = models.DateTimeField(
         'Дата добавления', auto_now_add=True, db_index=True)
 
