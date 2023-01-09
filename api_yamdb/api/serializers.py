@@ -124,7 +124,7 @@ class UserSerializer(serializers.ModelSerializer):
         return username_me_denied(value)
 
     def validate_role(self, value):
-        if value not in ['admin', 'user', 'moderator']:
+        if value not in [User.ADMIN, User.USER, User.MODERATOR]:
             raise serializers.ValidationError(f"Несуществующая роль: {value}")
         return value
 

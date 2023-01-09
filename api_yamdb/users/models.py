@@ -1,8 +1,9 @@
 from django.conf import settings
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-from users.validators import UsernameRegexValidator, username_me_denied
+from users.validators import username_me_denied
 
 
 class User(AbstractUser):
@@ -16,11 +17,10 @@ class User(AbstractUser):
         (MODERATOR, MODERATOR),
     ]
 
-    username_validator = UsernameRegexValidator()
     username = models.CharField(
         max_length=settings.LIMIT_USERNAME,
         unique=True,
-        validators=[username_validator, username_me_denied],
+        validators=[UnicodeUsernameValidator, username_me_denied],
         error_messages={
             'unique': "Пользователь с таким username уже существует",
         },
