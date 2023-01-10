@@ -57,8 +57,8 @@ class Review(models.Model):
     score = models.PositiveSmallIntegerField(
         blank=True,
         null=True,
-        default=0,
-        validators=[MinValueValidator(0), MaxValueValidator(10)],
+        default=1,
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
         verbose_name='Оценка произведения')
     pub_date = models.DateTimeField(
         'Дата добавления', auto_now_add=True, db_index=True)
